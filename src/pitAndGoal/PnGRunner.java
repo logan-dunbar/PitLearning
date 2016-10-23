@@ -1,13 +1,13 @@
 package pitAndGoal;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.List;
 
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.learning.tdmethods.QLearning;
 import burlap.behavior.valuefunction.ValueFunction;
 import burlap.mdp.core.state.State;
+import common.FolderCreator;
+import common.MyFileWriter;
 import goal.GoalLearner;
 import goal.GoalState;
 import pit.PitLearner;
@@ -15,8 +15,9 @@ import pit.PitState;
 
 public class PnGRunner {
 	public static void main(String[] args) {
-		new PnGRunner(false);
-		new PnGRunner(true);
+		String outputFolder = FolderCreator.createFolder("PitAndGoal");
+		new PnGRunner(outputFolder, false);
+		new PnGRunner(outputFolder, true);
 
 		System.exit(0);
 	}
@@ -24,15 +25,16 @@ public class PnGRunner {
 	private PnGLearner pngLearner;
 	private PitLearner pitLearner;
 	private GoalLearner goalLearner;
-	private int[] pngWorldSize;
-	private int[] pngPitLoc;
-	private int[] pngGoalLoc;
 
-	private int[] pitWorldSize;
-	private int[] pitLoc;
+	private int[] pngWorldSize = new int[] { 11, 11 };
+	private int[] pngPitLoc = new int[] { 5, 5 };
+	private int[] pngGoalLoc = new int[] { 10, 10 };
 
-	private int[] goalWorldSize;
-	private int[] goalLoc;
+	private int[] pitWorldSize = new int[] { 5, 5 };
+	private int[] pitLoc = new int[] { 2, 2 };
+
+	private int[] goalWorldSize = new int[] { 9, 9 };
+	private int[] goalLoc = new int[] { 7, 7 };
 
 	private ValueFunction pitVF = null;
 	private ValueFunction goalVF = null;
@@ -40,20 +42,9 @@ public class PnGRunner {
 	private QLearning pitQL = null;
 	private QLearning goalQL = null;
 
-	public PnGRunner(boolean withTransfer) {
-
-		this.pngWorldSize = new int[] { 11, 11 };
-		this.pngPitLoc = new int[] { 5, 5 };
-		this.pngGoalLoc = new int[] { 10, 10 };
-
-		this.pitWorldSize = new int[] { 5, 5 };
-		this.pitLoc = new int[] { 2, 2 };
-
-		this.goalWorldSize = new int[] { 9, 9 };
-		this.goalLoc = new int[] { 7, 7 };
-
-		this.pitLearner = new PitLearner(0.8, this.pitWorldSize, this.pitLoc, 500000);
-		this.goalLearner = new GoalLearner(0.8, this.goalWorldSize, this.goalLoc, 500000);
+	public PnGRunner(String outputFolder, boolean withTransfer) {
+		this.pitLearner = new PitLearner(0.8, this.pitWorldSize, this.pitLoc, 200000);
+		this.goalLearner = new GoalLearner(0.8, this.goalWorldSize, this.goalLoc, 200000);
 		// if (withTransfer) {
 		// this.pitVF = this.pitLearner.runLearning();
 		// this.goalVF = this.goalLearner.runLearning();
@@ -64,15 +55,15 @@ public class PnGRunner {
 			this.goalQL = this.goalLearner.runLearningLookAhead();
 		}
 
-		this.pngLearner = new PnGLearner(0.99, 0.8, this.pngWorldSize, this.pngPitLoc, this.pngGoalLoc, 5000,
-				this.pitVF, this.goalVF);
+		this.pngLearner = new PnGLearner(outputFolder, 0.99, 0.8, this.pngWorldSize, this.pngPitLoc, this.pngGoalLoc,
+				5000, this.pitVF, this.goalVF, this.pitQL, this.goalQL);
 		ValueFunction vf = this.pngLearner.runLearning(withTransfer);
 
-		manualValueFunctionVis(withTransfer, vf, null);
+		manualValueFunctionVis(outputFolder, withTransfer, vf, null);
 		// this.pngLearner.visualize();
 	}
 
-	public void manualValueFunctionVis(boolean withTransfer, ValueFunction vf, Policy p) {
+	public void manualValueFunctionVis(String folder, boolean withTransfer, ValueFunction vf, Policy p) {
 		List<State> allStates = this.pngLearner.getAllStates();
 
 		double[][] map = new double[this.pngWorldSize[0]][this.pngWorldSize[1]];
@@ -90,36 +81,18 @@ public class PnGRunner {
 			if (this.goalVF != null) {
 				map[xInd][yInd] = map[xInd][yInd] + this.goalVF.value(new GoalState(ps.goal_dx, ps.goal_dy));
 			}
-		}
 
-		StringBuilder sb = new StringBuilder();
-		for (int y = this.pngWorldSize[1] - 1; y >= 0; y--) {
-			for (int x = 0; x < this.pngWorldSize[0]; x++) {
-				sb.append(map[x][y]);
-				if (x < this.pngWorldSize[0] - 1) {
-					sb.append(",");
-				}
+			if (this.pitQL != null) {
+				map[xInd][yInd] = map[xInd][yInd] + this.pitQL.value(new PitState(ps.pit_dx, ps.pit_dy));
 			}
 
-			sb.append("\n");
+			if (this.goalQL != null) {
+				map[xInd][yInd] = map[xInd][yInd] + this.goalQL.value(new GoalState(ps.goal_dx, ps.goal_dy));
+			}
 		}
 
-		FileWriter fileWriter = null;
 		String filename = withTransfer ? "pngValueFunction_transfer" : "pngValueFunction";
-
-		try {
-			fileWriter = new FileWriter("output/" + filename + ".csv");
-			fileWriter.append(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				fileWriter.flush();
-				fileWriter.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+		MyFileWriter.writeExcelValueFunction(folder, filename, map);
 
 		// define colour function
 		// LandmarkColorBlendInterpolation cb = new LandmarkColorBlendInterpolation();

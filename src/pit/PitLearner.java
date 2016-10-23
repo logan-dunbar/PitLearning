@@ -13,6 +13,7 @@ import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.statehashing.HashableStateFactory;
 import burlap.statehashing.simple.SimpleHashableStateFactory;
+import common.PrintHelper;
 
 public class PitLearner {
 
@@ -48,9 +49,8 @@ public class PitLearner {
 		for (int ep = 0; ep < this.episodes; ep++) {
 			agent.runLearningEpisode(this.env, maxSteps);
 
-			if (Math.floorMod(ep, this.episodes / 100) == 0) {
-				System.out.println(ep / (this.episodes / 100) + "%, lr:" + lr.peekAtLearningRate(null, null));
-			}
+			String text = ep / (this.episodes / 100) + "%";
+			PrintHelper.printInterval(ep, this.episodes, 100, text);
 
 			this.env.resetEnvironment();
 			this.env.setCurStateTo(getInitialState());
