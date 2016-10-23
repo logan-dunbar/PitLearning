@@ -39,6 +39,7 @@ public class GoalLearner {
 	}
 
 	public QLearning runLearningLookAhead() {
+		System.out.println("Begin Goal Learning:");
 		// LearningAgent agent = new SarsaLam(domain, 0.99, hashingFactory, 0., 0.1, 0.3);
 		QLearning agent = new QLearning(this.domain, 0.99, this.hashingFactory, 0., 0.1);
 

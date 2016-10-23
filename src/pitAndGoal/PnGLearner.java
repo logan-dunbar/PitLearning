@@ -65,6 +65,7 @@ public class PnGLearner {
 	}
 
 	public ValueFunction runLearning(boolean withTransfer) {
+		System.out.println(withTransfer ? "Begin PnGLearning with Transfer:" : "Begin PnG Learning:");
 		// LearningAgent agent = new SarsaLam(this.domain, this.gamma, this.hashingFactory, 0., 0.1, 0.3);
 		QLearning agent = new QLearning(this.domain, this.gamma, this.hashingFactory, 0., 0.1);
 
@@ -91,7 +92,9 @@ public class PnGLearner {
 			// reward = reward + this.goalVF.value(new GoalState(fs.goal_dx, fs.goal_dy));
 			// }
 
-			dataList.add(new ResultData(ep, e.maxTimeStep(), reward));
+			if (ep < 500) {
+				dataList.add(new ResultData(ep, e.maxTimeStep(), reward));
+			}
 
 			String text = ep / (this.episodes / 100) + "%";
 			PrintHelper.printInterval(ep, this.episodes, 100, text);

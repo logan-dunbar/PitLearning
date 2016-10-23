@@ -56,7 +56,7 @@ public class PnGRunner {
 		}
 
 		this.pngLearner = new PnGLearner(outputFolder, 0.99, 0.8, this.pngWorldSize, this.pngPitLoc, this.pngGoalLoc,
-				5000, this.pitVF, this.goalVF, this.pitQL, this.goalQL);
+				500000, this.pitVF, this.goalVF, this.pitQL, this.goalQL);
 		ValueFunction vf = this.pngLearner.runLearning(withTransfer);
 
 		manualValueFunctionVis(outputFolder, withTransfer, vf, null);
@@ -80,14 +80,6 @@ public class PnGRunner {
 
 			if (this.goalVF != null) {
 				map[xInd][yInd] = map[xInd][yInd] + this.goalVF.value(new GoalState(ps.goal_dx, ps.goal_dy));
-			}
-
-			if (this.pitQL != null) {
-				map[xInd][yInd] = map[xInd][yInd] + this.pitQL.value(new PitState(ps.pit_dx, ps.pit_dy));
-			}
-
-			if (this.goalQL != null) {
-				map[xInd][yInd] = map[xInd][yInd] + this.goalQL.value(new GoalState(ps.goal_dx, ps.goal_dy));
 			}
 		}
 
